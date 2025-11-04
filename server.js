@@ -13,10 +13,7 @@ const app = express();
 // ✅ PENTING: Pasang CORS di paling atas sebelum apa pun
 app.use(
   cors({
-    origin: [
-      "https://monitoring-sinala.vercel.app", // domain frontend di Vercel
-      "http://localhost:5173", // untuk development lokal
-    ],
+    origin: "*",
     methods: ["GET", "POST"],
     allowedHeaders: ["Content-Type"],
   })
