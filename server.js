@@ -16,6 +16,7 @@ app.use(
     origin: [
       "https://monitoring-sinala.vercel.app", // frontend di vercel
       "http://localhost:5173", // lokal dev
+      "http://127.0.0.1:5500",
     ],
     methods: ["GET", "POST"],
     allowedHeaders: ["Content-Type"],
