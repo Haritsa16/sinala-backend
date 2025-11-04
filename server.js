@@ -2,7 +2,6 @@ import express from "express";
 import mongoose from "mongoose";
 import bodyParser from "body-parser";
 import cors from "cors";
-import cron from "node-cron";
 import dotenv from "dotenv";
 import Sensor from "./models/sensorModel.js";
 
@@ -10,38 +9,29 @@ dotenv.config();
 
 const app = express();
 
-// ✅ Aktifkan CORS
-app.use(
-  cors({
-    origin: ["https://monitoring-sinala.vercel.app", "http://localhost:5173"],
-    methods: ["GET", "POST"],
-    allowedHeaders: ["Content-Type"],
-  })
-);
+// ✅ CORS
+const corsOptions = {
+  origin: ["https://monitoring-sinala.vercel.app", "http://localhost:5173"],
+  methods: ["GET", "POST"],
+  allowedHeaders: ["Content-Type"],
+};
+app.use(cors(corsOptions));
 
-// ✅ Tambahkan ini untuk preflight request
-app.options(
-  "*",
-  cors({
-    origin: ["https://monitoring-sinala.vercel.app", "http://localhost:5173"],
-    methods: ["GET", "POST"],
-    allowedHeaders: ["Content-Type"],
-  })
-);
+// ✅ Tangani preflight CORS
+app.options("*", cors(corsOptions));
 
 app.use(bodyParser.json());
 
-// ✅ Tes route buat memastikan CORS aktif
-app.get("/", (req, res) => {
-  res.json({ message: "Sinala Backend is Running ✅" });
-});
+// ✅ Tes endpoint
+app.get("/", (req, res) => res.json({ message: "Sinala Backend Running ✅" }));
 
-// --- sisanya biarkan seperti semula ---
+// ✅ MongoDB connect
 mongoose
   .connect(process.env.MONGO_URI)
   .then(() => console.log("✅ MongoDB Atlas Connected"))
   .catch((err) => console.error("❌ MongoDB Error:", err));
 
+// ✅ Routes
 app.post("/api/sensor", async (req, res) => {
   try {
     const data = new Sensor(req.body);
@@ -65,7 +55,8 @@ app.get("/api/sensor", async (req, res) => {
   }
 });
 
+// ✅ Listen
 const PORT = process.env.PORT || 8080;
-app.listen(PORT, "0.0.0.0", () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-});
+app.listen(PORT, "0.0.0.0", () =>
+  console.log(`🚀 Server running on port ${PORT}`)
+);
