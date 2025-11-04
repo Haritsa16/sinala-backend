@@ -2,35 +2,29 @@ import express from "express";
 import mongoose from "mongoose";
 import bodyParser from "body-parser";
 import cors from "cors";
+import cron from "node-cron";
 import dotenv from "dotenv";
 import Sensor from "./models/sensorModel.js";
 
 dotenv.config();
+
 const app = express();
 
-const corsOptions = {
-  origin: ["https://monitoring-sinala.vercel.app", "http://localhost:5173"],
-  methods: ["GET", "POST", "OPTIONS"],
-  allowedHeaders: ["Content-Type"],
-};
-
-// ✅ Aktifkan CORS untuk semua request
-app.use(cors(corsOptions));
-
-// ✅ Tangani preflight OPTIONS secara manual (FIX TERJAMIN)
-app.use((req, res, next) => {
-  if (req.method === "OPTIONS") {
-    res.header("Access-Control-Allow-Origin", corsOptions.origin.join(","));
-    res.header("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-    res.header("Access-Control-Allow-Headers", "Content-Type");
-    return res.sendStatus(200);
-  }
-  next();
-});
+// 🧠 AKTIFKAN CORS DI PALING ATAS
+app.use(
+  cors({
+    origin: [
+      "https://monitoring-sinala.vercel.app", // frontend di vercel
+      "http://localhost:5173", // lokal dev
+    ],
+    methods: ["GET", "POST"],
+    allowedHeaders: ["Content-Type"],
+  })
+);
 
 app.use(bodyParser.json());
 
-// ✅ Tes endpoint
+// ✅ Tes route
 app.get("/", (req, res) => {
   res.json({ message: "Sinala Backend is Running ✅" });
 });
@@ -41,6 +35,7 @@ mongoose
   .then(() => console.log("✅ MongoDB Atlas Connected"))
   .catch((err) => console.error("❌ MongoDB Error:", err));
 
+// ✅ POST data sensor
 app.post("/api/sensor", async (req, res) => {
   try {
     const data = new Sensor(req.body);
@@ -51,6 +46,7 @@ app.post("/api/sensor", async (req, res) => {
   }
 });
 
+// ✅ GET data sensor
 app.get("/api/sensor", async (req, res) => {
   try {
     const thirtyDaysAgo = new Date();
@@ -64,7 +60,15 @@ app.get("/api/sensor", async (req, res) => {
   }
 });
 
+// ✅ Start server
 const PORT = process.env.PORT || 8080;
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`🚀 Server running on port ${PORT}`);
+});
+
+// 🧹 Cron
+cron.schedule("0 0 * * *", async () => {
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  await Sensor.deleteMany({ waktu: { $lt: thirtyDaysAgo } });
 });
