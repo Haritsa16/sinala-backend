@@ -2,21 +2,34 @@ import express from "express";
 import mongoose from "mongoose";
 import bodyParser from "body-parser";
 import cors from "cors";
+import cron from "node-cron";
+import dotenv from "dotenv";
 import Sensor from "./models/sensorModel.js";
 
+dotenv.config();
+
 const app = express();
-app.use(cors());
+app.use(
+  cors({
+    origin: "*", // ganti nanti ke domain frontend kamu
+  })
+);
 app.use(bodyParser.json());
 
-// 🔗 Ganti connection string di bawah ini dengan punyamu dari MongoDB Atlas
+// ✅ Root endpoint (buat tes server)
+app.get("/", (req, res) => {
+  res.send("✅ Sinala Backend is Running!");
+});
+
+// ✅ MongoDB connection
+console.log("🚀 Starting Express server...");
+console.log("📡 Connecting to MongoDB Atlas...");
 mongoose
-  .connect(
-    "mongodb+srv://sinalaits:kse1965@cluster0.jlz1wy6.mongodb.net/iot_data?retryWrites=true&w=majority&appName=Cluster0"
-  )
+  .connect(process.env.MONGO_URI)
   .then(() => console.log("✅ MongoDB Atlas Connected"))
   .catch((err) => console.error("❌ MongoDB Error:", err));
 
-// 📥 Endpoint untuk menerima data dari sensor
+// 📥 Endpoint POST data sensor
 app.post("/api/sensor", async (req, res) => {
   try {
     const data = new Sensor(req.body);
@@ -27,15 +40,14 @@ app.post("/api/sensor", async (req, res) => {
   }
 });
 
-// 📤 Endpoint untuk menampilkan data (30 hari terakhir)
+// 📤 Endpoint GET data 30 hari terakhir
 app.get("/api/sensor", async (req, res) => {
   try {
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-    // ambil semua data 30 hari terakhir, urut dari lama → baru
     const data = await Sensor.find({ waktu: { $gte: thirtyDaysAgo } })
-      .sort({ waktu: -1 }) // 🟢 urut dari BARU ke LAMA
+      .sort({ waktu: -1 })
       .lean();
 
     console.log(`📦 Mengirim ${data.length} data ke frontend`);
@@ -45,19 +57,17 @@ app.get("/api/sensor", async (req, res) => {
   }
 });
 
-// 🚀 Jalankan server
-app.listen(3000, () => {
-  console.log("🚀 Server running on http://localhost:3000");
+// ✅ Jalankan server
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`🚀 Server running on port ${PORT}`);
 });
 
-// ==================== CRON JOB: Hapus data lebih dari 30 hari ====================
-import cron from "node-cron";
-
+// 🧹 Cron job hapus data lama (>30 hari)
 cron.schedule("0 0 * * *", async () => {
   try {
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-
     const result = await Sensor.deleteMany({ waktu: { $lt: thirtyDaysAgo } });
     console.log(
       `🧹 Hapus ${result.deletedCount} data lama (lebih dari 30 hari)`
