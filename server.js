@@ -10,10 +10,13 @@ dotenv.config();
 
 const app = express();
 
-// 🧠 Tambahkan konfigurasi CORS di sini:
+// 🧠 CORS HARUS DIDEKLARASI DI PALING ATAS SEBELUM ROUTE APA PUN
 app.use(
   cors({
-    origin: ["https://monitoring-sinala.vercel.app", "http://localhost:5173"], // tambahkan domain frontend kamu di sini
+    origin: [
+      "https://monitoring-sinala.vercel.app", // domain frontend kamu
+      "http://localhost:5173", // buat development lokal
+    ],
     methods: ["GET", "POST"],
     allowedHeaders: ["Content-Type"],
   })
