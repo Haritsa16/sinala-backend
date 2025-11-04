@@ -10,16 +10,25 @@ dotenv.config();
 
 const app = express();
 
-// ✅ PENTING: Pasang CORS di paling atas sebelum apa pun
+// ✅ Aktifkan CORS
 app.use(
   cors({
-    origin: "*",
+    origin: ["https://monitoring-sinala.vercel.app", "http://localhost:5173"],
     methods: ["GET", "POST"],
     allowedHeaders: ["Content-Type"],
   })
 );
 
-// ✅ Tambahkan parser setelah CORS
+// ✅ Tambahkan ini untuk preflight request
+app.options(
+  "*",
+  cors({
+    origin: ["https://monitoring-sinala.vercel.app", "http://localhost:5173"],
+    methods: ["GET", "POST"],
+    allowedHeaders: ["Content-Type"],
+  })
+);
+
 app.use(bodyParser.json());
 
 // ✅ Tes route buat memastikan CORS aktif
