@@ -9,11 +9,16 @@ import Sensor from "./models/sensorModel.js";
 dotenv.config();
 
 const app = express();
+
+// 🧠 Tambahkan konfigurasi CORS di sini:
 app.use(
   cors({
-    origin: "*", // ganti nanti ke domain frontend kamu
+    origin: ["https://monitoring-sinala.vercel.app", "http://localhost:5173"], // tambahkan domain frontend kamu di sini
+    methods: ["GET", "POST"],
+    allowedHeaders: ["Content-Type"],
   })
 );
+
 app.use(bodyParser.json());
 
 // ✅ Root endpoint (buat tes server)
