@@ -10,34 +10,32 @@ dotenv.config();
 
 const app = express();
 
-// 🧠 PENTING: aktifkan CORS di paling atas, sebelum route apa pun
+// ✅ PENTING: Pasang CORS di paling atas sebelum apa pun
 app.use(
   cors({
     origin: [
-      "https://monitoring-sinala.vercel.app", // frontend kamu di Vercel
-      "http://localhost:5173", // dev lokal
+      "https://monitoring-sinala.vercel.app", // domain frontend di Vercel
+      "http://localhost:5173", // untuk development lokal
     ],
     methods: ["GET", "POST"],
     allowedHeaders: ["Content-Type"],
   })
 );
 
+// ✅ Tambahkan parser setelah CORS
 app.use(bodyParser.json());
 
-// ✅ Root endpoint (buat tes server)
+// ✅ Tes route buat memastikan CORS aktif
 app.get("/", (req, res) => {
-  res.send("✅ Sinala Backend is Running!");
+  res.json({ message: "Sinala Backend is Running ✅" });
 });
 
-// ✅ MongoDB connection
-console.log("🚀 Starting Express server...");
-console.log("📡 Connecting to MongoDB Atlas...");
+// --- sisanya biarkan seperti semula ---
 mongoose
   .connect(process.env.MONGO_URI)
   .then(() => console.log("✅ MongoDB Atlas Connected"))
   .catch((err) => console.error("❌ MongoDB Error:", err));
 
-// 📥 Endpoint POST data sensor
 app.post("/api/sensor", async (req, res) => {
   try {
     const data = new Sensor(req.body);
@@ -48,39 +46,20 @@ app.post("/api/sensor", async (req, res) => {
   }
 });
 
-// 📤 Endpoint GET data 30 hari terakhir
 app.get("/api/sensor", async (req, res) => {
   try {
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-
     const data = await Sensor.find({ waktu: { $gte: thirtyDaysAgo } })
       .sort({ waktu: -1 })
       .lean();
-
-    console.log(`📦 Mengirim ${data.length} data ke frontend`);
     res.json(data);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// ✅ Jalankan server
 const PORT = process.env.PORT || 8080;
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`🚀 Server running on port ${PORT}`);
-});
-
-// 🧹 Cron job hapus data lama (>30 hari)
-cron.schedule("0 0 * * *", async () => {
-  try {
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-    const result = await Sensor.deleteMany({ waktu: { $lt: thirtyDaysAgo } });
-    console.log(
-      `🧹 Hapus ${result.deletedCount} data lama (lebih dari 30 hari)`
-    );
-  } catch (err) {
-    console.error("❌ Error saat hapus data lama:", err);
-  }
 });
