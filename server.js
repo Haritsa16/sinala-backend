@@ -10,22 +10,32 @@ const app = express();
 
 const corsOptions = {
   origin: ["https://monitoring-sinala.vercel.app", "http://localhost:5173"],
-  methods: ["GET", "POST"],
+  methods: ["GET", "POST", "OPTIONS"],
   allowedHeaders: ["Content-Type"],
 };
 
-// ✅ aktifkan CORS
+// ✅ Aktifkan CORS untuk semua request
 app.use(cors(corsOptions));
 
-// ✅ handle preflight request (tanpa crash)
-app.options("/*", cors(corsOptions)); // <--- ganti bagian ini
+// ✅ Tangani preflight OPTIONS secara manual (FIX TERJAMIN)
+app.use((req, res, next) => {
+  if (req.method === "OPTIONS") {
+    res.header("Access-Control-Allow-Origin", corsOptions.origin.join(","));
+    res.header("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+    res.header("Access-Control-Allow-Headers", "Content-Type");
+    return res.sendStatus(200);
+  }
+  next();
+});
 
 app.use(bodyParser.json());
 
+// ✅ Tes endpoint
 app.get("/", (req, res) => {
   res.json({ message: "Sinala Backend is Running ✅" });
 });
 
+// ✅ MongoDB
 mongoose
   .connect(process.env.MONGO_URI)
   .then(() => console.log("✅ MongoDB Atlas Connected"))
