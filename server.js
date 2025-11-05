@@ -4,40 +4,48 @@ import bodyParser from "body-parser";
 import cors from "cors";
 import cron from "node-cron";
 import dotenv from "dotenv";
+import http from "http"; // ⚡ buat self-ping anti sleep
 import Sensor from "./models/sensorModel.js";
 
 dotenv.config();
 
 const app = express();
 
-// 🧠 AKTIFKAN CORS DI PALING ATAS
+// =============================
+// === CORS & Middleware ===
+// =============================
 app.use(
   cors({
     origin: [
       "https://monitoring-sinala.vercel.app", // frontend di vercel
       "http://localhost:5173", // lokal dev
       "http://127.0.0.1:5500",
-      "*", // ✅ tambah ini agar ESP32 bisa POST langsung
+      "*", // ✅ supaya ESP32 bisa POST
     ],
     methods: ["GET", "POST"],
     allowedHeaders: ["Content-Type"],
   })
 );
-
 app.use(bodyParser.json());
 
-// ✅ Tes route
+// =============================
+// === ROUTES ===
+// =============================
 app.get("/", (req, res) => {
   res.json({ message: "Sinala Backend is Running ✅" });
 });
 
-// ✅ MongoDB Atlas Connection
+// =============================
+// === MongoDB Connection ===
+// =============================
 mongoose
   .connect(process.env.MONGO_URI)
   .then(() => console.log("✅ MongoDB Atlas Connected"))
   .catch((err) => console.error("❌ MongoDB Error:", err));
 
-// ✅ POST data sensor dari ESP32
+// =============================
+// === POST Data Sensor (ESP32) ===
+// =============================
 app.post("/api/sensor", async (req, res) => {
   try {
     console.log("📩 Data masuk dari ESP32:", req.body);
@@ -50,7 +58,9 @@ app.post("/api/sensor", async (req, res) => {
   }
 });
 
-// ✅ GET data sensor (30 hari terakhir)
+// =============================
+// === GET Data Sensor (30 Hari) ===
+// =============================
 app.get("/api/sensor", async (req, res) => {
   try {
     const thirtyDaysAgo = new Date();
@@ -65,20 +75,33 @@ app.get("/api/sensor", async (req, res) => {
   }
 });
 
-// ✅ Jalankan server di Railway
+// =============================
+// === Jalankan Server ===
+// =============================
 const PORT = process.env.PORT || 8080;
-
-// Tambahkan log di sini biar kita tahu PORT beneran kebaca
 console.log("PORT dari environment:", process.env.PORT);
 
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`🚀 Server running on port ${PORT}`);
 });
 
-// Trik biar Railway gak auto-matiin container
-setInterval(() => {}, 1000 * 60 * 60);
+// =============================
+// === Anti Sleep Ping (Railway) ===
+// =============================
+// Self-ping ke domain Railway tiap 5 menit biar gak auto sleep
+setInterval(() => {
+  http
+    .get("https://sinala-backend-production.up.railway.app", (res) => {
+      console.log("💤 Keep-alive ping sent:", res.statusCode);
+    })
+    .on("error", (err) => {
+      console.error("Ping error:", err.message);
+    });
+}, 1000 * 60 * 5); // setiap 5 menit
 
-// 🧹 Cron job hapus data lama (tiap tengah malam)
+// =============================
+// === Cron Job Hapus Data Lama ===
+// =============================
 cron.schedule("0 0 * * *", async () => {
   const thirtyDaysAgo = new Date();
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
