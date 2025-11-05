@@ -67,9 +67,16 @@ app.get("/api/sensor", async (req, res) => {
 
 // ✅ Jalankan server di Railway
 const PORT = process.env.PORT || 8080;
+
+// Tambahkan log di sini biar kita tahu PORT beneran kebaca
+console.log("PORT dari environment:", process.env.PORT);
+
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`🚀 Server running on port ${PORT}`);
 });
+
+// Trik biar Railway gak auto-matiin container
+setInterval(() => {}, 1000 * 60 * 60);
 
 // 🧹 Cron job hapus data lama (tiap tengah malam)
 cron.schedule("0 0 * * *", async () => {
