@@ -1,16 +1,28 @@
-# ==== Node.js ====
+# Node modules
 node_modules/
-.env
 npm-debug.log
-package-lock.json
+yarn-error.log
+pnpm-debug.log
 
-# ==== OS / Editor Files ====
+# Environment files
+.env
+
+# System files
 .DS_Store
 Thumbs.db
 
-# ==== Docker & Fly.io (biar gak ikut ke Railway) ====
+# Build / deploy cache
+*.log
+*.tmp
+
+# Docker & Fly.io
 Dockerfile
 fly.toml
 
-# ==== VSCode Configs ====
-.vscode/
+# Railway & Render cache
+dist/
+.cache/
+
+# Ignore package-lock kalau mau lebih ringan
+# (hapus komentar kalau mau diabaikan)
+# package-lock.json
